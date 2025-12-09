@@ -230,14 +230,15 @@ async function main() {
 
   // Create Users
   console.log("  Creating users...");
-  const hashedPassword = await hash("password123", 10);
+  const adminPassword = await hash("Keala808!", 10);
+  const staffPassword = await hash("password123", 10);
 
   const adminUser = await prisma.user.create({
     data: {
       organizationId: org.id,
-      email: "admin@modernkitchen.com",
-      passwordHash: hashedPassword,
-      firstName: "Alex",
+      email: "dev@ohanarecovery.org",
+      passwordHash: adminPassword,
+      firstName: "Dev",
       lastName: "Admin",
       pin: "1234",
       roleId: adminRole.id,
@@ -248,7 +249,7 @@ async function main() {
     data: {
       organizationId: org.id,
       email: "manager@modernkitchen.com",
-      passwordHash: hashedPassword,
+      passwordHash: staffPassword,
       firstName: "Morgan",
       lastName: "Manager",
       pin: "2345",
@@ -260,7 +261,7 @@ async function main() {
     data: {
       organizationId: org.id,
       email: "sam@modernkitchen.com",
-      passwordHash: hashedPassword,
+      passwordHash: staffPassword,
       firstName: "Sam",
       lastName: "Server",
       pin: "3456",
@@ -272,7 +273,7 @@ async function main() {
     data: {
       organizationId: org.id,
       email: "bailey@modernkitchen.com",
-      passwordHash: hashedPassword,
+      passwordHash: staffPassword,
       firstName: "Bailey",
       lastName: "Bartender",
       pin: "4567",
@@ -284,7 +285,7 @@ async function main() {
     data: {
       organizationId: org.id,
       email: "chris@modernkitchen.com",
-      passwordHash: hashedPassword,
+      passwordHash: staffPassword,
       firstName: "Chris",
       lastName: "Cook",
       pin: "5678",
@@ -1031,11 +1032,13 @@ async function main() {
 
   console.log("✅ Seed completed successfully!");
   console.log("\n📋 Test accounts:");
-  console.log("   Admin:     admin@modernkitchen.com / password123");
+  console.log("   Admin:     dev@ohanarecovery.org / Keala808!");
   console.log("   Manager:   manager@modernkitchen.com / password123");
   console.log("   Server:    sam@modernkitchen.com / password123");
   console.log("   Bartender: bailey@modernkitchen.com / password123");
   console.log("   Cook:      chris@modernkitchen.com / password123");
+  console.log("\n🔑 PIN codes for terminal login:");
+  console.log("   Admin: 1234 | Manager: 2345 | Server: 3456 | Bartender: 4567 | Cook: 5678");
 }
 
 main()

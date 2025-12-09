@@ -46,6 +46,12 @@ export const PERMISSIONS = {
   REPORTS_INVENTORY: "reports.inventory",
   REPORTS_EXPORT: "reports.export",
 
+  // Intelligence/AI
+  INTELLIGENCE_VIEW: "intelligence.view",
+  INTELLIGENCE_QUERY: "intelligence.query",
+  INTELLIGENCE_SPECIALS: "intelligence.specials",
+  INTELLIGENCE_PREP: "intelligence.prep",
+
   // Admin
   ADMIN_USERS: "admin.users",
   ADMIN_ROLES: "admin.roles",
@@ -93,6 +99,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.REPORTS_LABOR,
     PERMISSIONS.REPORTS_INVENTORY,
     PERMISSIONS.REPORTS_EXPORT,
+    PERMISSIONS.INTELLIGENCE_VIEW,
+    PERMISSIONS.INTELLIGENCE_QUERY,
+    PERMISSIONS.INTELLIGENCE_SPECIALS,
+    PERMISSIONS.INTELLIGENCE_PREP,
     PERMISSIONS.ADMIN_USERS,
   ],
 

@@ -2,6 +2,12 @@ import { z } from "zod";
 import { router, protectedProcedure, createPermissionProcedure } from "../trpc-server";
 import { TRPCError } from "@trpc/server";
 import {
+  broadcast,
+  broadcastOrderCreated,
+  broadcastOrderUpdated,
+  broadcastOrderFired,
+} from "@/lib/realtime/event-emitter";
+import {
   createOrderSchema,
   updateOrderSchema,
   addOrderItemSchema,
@@ -129,7 +135,8 @@ export const orderRouter = router({
         },
       });
 
-      // TODO: Emit real-time event
+      // Emit real-time event
+      await broadcastOrderCreated(input.locationId, order.id, ctx.user.id);
 
       return order;
     }),
@@ -199,7 +206,14 @@ export const orderRouter = router({
       // Update order totals
       await updateOrderTotals(ctx.prisma, orderId);
 
-      // TODO: Emit real-time event
+      // Emit real-time event
+      const order = await ctx.prisma.order.findUnique({
+        where: { id: orderId },
+        select: { locationId: true },
+      });
+      if (order) {
+        await broadcast("ITEM_ADDED", order.locationId, orderItem, ctx.user.id);
+      }
 
       return orderItem;
     }),
@@ -300,7 +314,16 @@ export const orderRouter = router({
         });
       }
 
-      // TODO: Emit real-time event for kitchen
+      // Emit real-time event for kitchen
+      if (items.length > 0) {
+        const order = await ctx.prisma.order.findUnique({
+          where: { id: items[0].orderId },
+          select: { locationId: true },
+        });
+        if (order) {
+          await broadcastOrderFired(order.locationId, items[0].orderId, ctx.user.id);
+        }
+      }
 
       return items;
     }),
@@ -329,12 +352,13 @@ export const orderRouter = router({
         },
       });
 
-      await ctx.prisma.order.update({
+      const order = await ctx.prisma.order.update({
         where: { id: input.orderId },
         data: { status: "SENT" },
       });
 
-      // TODO: Emit real-time event
+      // Emit real-time event
+      await broadcastOrderFired(order.locationId, input.orderId, ctx.user.id);
 
       return { success: true };
     }),
@@ -387,7 +411,11 @@ export const orderRouter = router({
         });
       }
 
-      // TODO: Emit real-time event
+      // Emit real-time event
+      await broadcast("TICKET_BUMPED", item.order.locationId, {
+        orderId: item.orderId,
+        orderItemId: input.orderItemId,
+      }, ctx.user.id);
 
       return item;
     }),

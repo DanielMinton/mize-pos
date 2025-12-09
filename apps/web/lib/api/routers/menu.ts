@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure, createPermissionProcedure } from "../trpc-server";
 import { TRPCError } from "@trpc/server";
+import { broadcastEightySix } from "@/lib/realtime/event-emitter";
 import {
   createMenuSchema,
   updateMenuSchema,
@@ -348,7 +349,8 @@ export const menuRouter = router({
       },
     });
 
-    // TODO: Emit real-time event
+    // Emit real-time event for 86
+    await broadcastEightySix(input.locationId, input.menuItemId, true, input.reason, ctx.user.id);
 
     return eightySix;
   }),
@@ -384,7 +386,8 @@ export const menuRouter = router({
         });
       }
 
-      // TODO: Emit real-time event
+      // Emit real-time event for un-86
+      await broadcastEightySix(input.locationId, input.menuItemId, false, undefined, ctx.user.id);
 
       return { success: true };
     }),

@@ -58,7 +58,7 @@ export default function KDSPage() {
   useEffect(() => {
     if (ticketsData) {
       setTickets(
-        ticketsData.map((t) => ({
+        ticketsData.map((t: typeof ticketsData[number]) => ({
           ...t,
           firedAt: t.firedAt ? new Date(t.firedAt) : null,
         }))

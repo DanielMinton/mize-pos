@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure, createPermissionProcedure } from "../trpc-server";
 import { bumpTicketSchema } from "@mise-pos/types";
 import { PERMISSIONS } from "@mise-pos/types";
+import { broadcast, broadcastTicketBumped } from "@/lib/realtime/event-emitter";
 
 const kitchenViewProcedure = createPermissionProcedure(PERMISSIONS.KITCHEN_VIEW);
 const kitchenBumpProcedure = createPermissionProcedure(PERMISSIONS.KITCHEN_BUMP);
@@ -185,7 +186,24 @@ export const kitchenRouter = router({
         });
       }
 
-      // TODO: Emit real-time event
+      // Emit real-time event
+      const order = await ctx.prisma.order.findUnique({
+        where: { id: input.orderId },
+        select: { locationId: true },
+      });
+      if (order) {
+        const bumpedItems = await ctx.prisma.orderItem.findMany({
+          where: { orderId: input.orderId, status: "READY" },
+          select: { id: true },
+        });
+        await broadcastTicketBumped(
+          order.locationId,
+          input.orderId,
+          bumpedItems.map((i) => i.id),
+          input.stationId || "",
+          ctx.user.id
+        );
+      }
 
       return { success: true };
     }),
@@ -205,12 +223,16 @@ export const kitchenRouter = router({
         },
       });
 
-      await ctx.prisma.order.update({
+      const order = await ctx.prisma.order.update({
         where: { id: input.orderId },
         data: { status: "IN_PROGRESS" },
       });
 
-      // TODO: Emit real-time event
+      // Emit real-time event
+      await broadcast("TICKET_RECALLED", order.locationId, {
+        orderId: input.orderId,
+        timestamp: new Date(),
+      }, ctx.user.id);
 
       return { success: true };
     }),
