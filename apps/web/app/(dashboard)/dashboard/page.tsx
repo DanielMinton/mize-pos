@@ -478,7 +478,7 @@ export default function DashboardPage() {
               <CardContent>
                 {itemSales && itemSales.length > 0 ? (
                   <div className="space-y-2">
-                    {itemSales.map((item, index) => (
+                    {itemSales.map((item: typeof itemSales[number], index: number) => (
                       <div
                         key={item.menuItemId}
                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
