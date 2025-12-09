@@ -63,7 +63,7 @@ export default function POSPage() {
   // Update 86'd items in store
   useEffect(() => {
     if (eightySixedData) {
-      setEightySixedItems(eightySixedData.map((e) => e.menuItemId));
+      setEightySixedItems(eightySixedData.map((e: typeof eightySixedData[number]) => e.menuItemId));
     }
   }, [eightySixedData, setEightySixedItems]);
 
@@ -92,20 +92,20 @@ export default function POSPage() {
 
   // Flatten categories from all menus
   const categories =
-    menus?.flatMap((menu) =>
-      menu.categories.map((cat) => ({
+    menus?.flatMap((menu: typeof menus[number]) =>
+      menu.categories.map((cat: typeof menu.categories[number]) => ({
         id: cat.id,
         name: cat.name,
         color: cat.color,
         itemCount: cat.items.length,
-        items: cat.items.map((item) => ({
+        items: cat.items.map((item: typeof cat.items[number]) => ({
           ...item,
           price: Number(item.price),
-          modifierGroups: item.modifierGroups.map((mg) => ({
+          modifierGroups: item.modifierGroups.map((mg: typeof item.modifierGroups[number]) => ({
             ...mg,
             modifierGroup: {
               ...mg.modifierGroup,
-              modifiers: mg.modifierGroup.modifiers.map((mod) => ({
+              modifiers: mg.modifierGroup.modifiers.map((mod: typeof mg.modifierGroup.modifiers[number]) => ({
                 ...mod,
                 priceAdjustment: Number(mod.priceAdjustment),
               })),
@@ -302,7 +302,7 @@ export default function POSPage() {
 
       {/* Category Tabs */}
       <CategoryTabs
-        categories={categories.map((c) => ({
+        categories={categories.map((c: typeof categories[number]) => ({
           id: c.id,
           name: c.name,
           color: c.color,
