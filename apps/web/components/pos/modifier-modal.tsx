@@ -118,7 +118,7 @@ export function ModifierModal({
   };
 
   // Check if required modifiers are satisfied
-  const isValid = menuItem.modifierGroups.every((mg) => {
+  const isValid = menuItem.modifierGroups.every((mg: typeof menuItem.modifierGroups[number]) => {
     const required = mg.required ?? mg.modifierGroup.required;
     const minSelections = mg.minSelections ?? mg.modifierGroup.minSelections;
     const selected = selectedModifiers.get(mg.modifierGroup.id) || [];
