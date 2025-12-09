@@ -134,10 +134,10 @@ export const useOrderStore = create<OrderStore>((set, get) => ({
     // Initialize with default modifiers
     const selectedModifiers = new Map<string, string[]>();
 
-    menuItem.modifierGroups.forEach((mg) => {
+    menuItem.modifierGroups.forEach((mg: typeof menuItem.modifierGroups[number]) => {
       const defaults = mg.modifierGroup.modifiers
-        .filter((m) => m.isDefault)
-        .map((m) => m.id);
+        .filter((m: typeof mg.modifierGroup.modifiers[number]) => m.isDefault)
+        .map((m: typeof mg.modifierGroup.modifiers[number]) => m.id);
       if (defaults.length > 0) {
         selectedModifiers.set(mg.modifierGroup.id, defaults);
       }
@@ -225,14 +225,14 @@ export const useOrderStore = create<OrderStore>((set, get) => ({
     // Build modifiers array
     const modifiers: Array<{ modifierId: string; name: string; priceAdjustment: number }> = [];
 
-    selection.selectedModifiers.forEach((modifierIds, groupId) => {
+    selection.selectedModifiers.forEach((modifierIds: string[], groupId: string) => {
       const group = selection.menuItem.modifierGroups.find(
-        (mg) => mg.modifierGroup.id === groupId
+        (mg: typeof selection.menuItem.modifierGroups[number]) => mg.modifierGroup.id === groupId
       );
       if (!group) return;
 
-      modifierIds.forEach((modifierId) => {
-        const modifier = group.modifierGroup.modifiers.find((m) => m.id === modifierId);
+      modifierIds.forEach((modifierId: string) => {
+        const modifier = group.modifierGroup.modifiers.find((m: typeof group.modifierGroup.modifiers[number]) => m.id === modifierId);
         if (modifier) {
           modifiers.push({
             modifierId: modifier.id,
@@ -273,7 +273,7 @@ export const useOrderStore = create<OrderStore>((set, get) => ({
     set({
       currentOrder: {
         ...current,
-        items: current.items.map((item) =>
+        items: current.items.map((item: typeof current.items[number]) =>
           item.id === itemId ? { ...item, ...updates } : item
         ),
       },
@@ -287,7 +287,7 @@ export const useOrderStore = create<OrderStore>((set, get) => ({
     set({
       currentOrder: {
         ...current,
-        items: current.items.filter((item) => item.id !== itemId),
+        items: current.items.filter((item: typeof current.items[number]) => item.id !== itemId),
       },
     });
   },
@@ -297,8 +297,8 @@ export const useOrderStore = create<OrderStore>((set, get) => ({
     if (!current) return 0;
 
     return current.items
-      .filter((item) => item.status !== "VOID")
-      .reduce((sum, item) => sum + Number(item.totalPrice), 0);
+      .filter((item: typeof current.items[number]) => item.status !== "VOID")
+      .reduce((sum: number, item: typeof current.items[number]) => sum + Number(item.totalPrice), 0);
   },
 
   getItemCount: () => {
@@ -306,7 +306,7 @@ export const useOrderStore = create<OrderStore>((set, get) => ({
     if (!current) return 0;
 
     return current.items
-      .filter((item) => item.status !== "VOID")
-      .reduce((sum, item) => sum + item.quantity, 0);
+      .filter((item: typeof current.items[number]) => item.status !== "VOID")
+      .reduce((sum: number, item: typeof current.items[number]) => sum + item.quantity, 0);
   },
 }));

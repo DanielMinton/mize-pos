@@ -68,7 +68,7 @@ export const useKitchenStore = create<KitchenStore>((set, get) => ({
 
   updateTicket: (orderId, updates) => {
     set((state) => ({
-      tickets: state.tickets.map((ticket) =>
+      tickets: state.tickets.map((ticket: typeof state.tickets[number]) =>
         ticket.orderId === orderId ? { ...ticket, ...updates } : ticket
       ),
     }));
@@ -76,7 +76,7 @@ export const useKitchenStore = create<KitchenStore>((set, get) => ({
 
   removeTicket: (orderId) => {
     set((state) => ({
-      tickets: state.tickets.filter((ticket) => ticket.orderId !== orderId),
+      tickets: state.tickets.filter((ticket: typeof state.tickets[number]) => ticket.orderId !== orderId),
     }));
   },
 
@@ -91,12 +91,12 @@ export const useKitchenStore = create<KitchenStore>((set, get) => ({
     }
 
     return state.tickets
-      .map((ticket) => ({
+      .map((ticket: typeof state.tickets[number]) => ({
         ...ticket,
         items: ticket.items.filter(
-          (item) => item.station?.id === state.activeStationId
+          (item: typeof ticket.items[number]) => item.station?.id === state.activeStationId
         ),
       }))
-      .filter((ticket) => ticket.items.length > 0);
+      .filter((ticket: typeof state.tickets[number]) => ticket.items.length > 0);
   },
 }));
