@@ -10,10 +10,10 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@mise-pos/ai": "workspace:*",
+    "@mise-pos/config": "workspace:*",
     "@mise-pos/database": "workspace:*",
     "@mise-pos/types": "workspace:*",
-    "@mise-pos/config": "workspace:*",
-    "@mise-pos/ai": "workspace:*",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-avatar": "^1.1.1",
     "@radix-ui/react-checkbox": "^1.1.2",
@@ -34,6 +34,7 @@
     "@trpc/next": "^11.0.0-rc.608",
     "@trpc/react-query": "^11.0.0-rc.608",
     "@trpc/server": "^11.0.0-rc.608",
+    "@vercel/speed-insights": "^1.3.1",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
