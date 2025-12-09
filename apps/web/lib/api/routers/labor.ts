@@ -533,8 +533,8 @@ export const laborRouter = router({
 
         // Subtract unpaid breaks
         const unpaidBreakMinutes = shift.breaks
-          .filter((b) => b.type === "UNPAID" && b.duration)
-          .reduce((sum, b) => sum + (b.duration || 0), 0);
+          .filter((b: typeof shift.breaks[number]) => b.type === "UNPAID" && b.duration)
+          .reduce((sum: number, b: typeof shift.breaks[number]) => sum + (b.duration || 0), 0);
 
         totalHours += hoursWorked - unpaidBreakMinutes / 60;
       }

@@ -588,14 +588,14 @@ export const orderRouter = router({
 
       // Create checks for each split
       const checks = await Promise.all(
-        input.splits.map(async (split, index) => {
+        input.splits.map(async (split: typeof input.splits[number], index: number) => {
           // Calculate split totals
-          const items = order.items.filter((i) =>
+          const items = order.items.filter((i: typeof order.items[number]) =>
             split.orderItemIds.includes(i.id)
           );
           const subtotal = items
-            .filter((i) => i.status !== "VOID")
-            .reduce((sum, i) => sum + Number(i.totalPrice), 0);
+            .filter((i: typeof items[number]) => i.status !== "VOID")
+            .reduce((sum: number, i: typeof items[number]) => sum + Number(i.totalPrice), 0);
 
           const taxRate = 0.0825; // TODO: Get from settings
           const taxAmount = subtotal * taxRate;
@@ -650,10 +650,10 @@ export const orderRouter = router({
 
       // Create a check for each seat
       const checks = await Promise.all(
-        Object.entries(itemsBySeat).map(async ([seat, items]) => {
+        Object.entries(itemsBySeat).map(async ([seat, items]: [string, typeof order.items]) => {
           const subtotal = items
-            .filter((i) => i.status !== "VOID")
-            .reduce((sum, i) => sum + Number(i.totalPrice), 0);
+            .filter((i: typeof items[number]) => i.status !== "VOID")
+            .reduce((sum: number, i: typeof items[number]) => sum + Number(i.totalPrice), 0);
 
           const taxRate = 0.0825;
           const taxAmount = subtotal * taxRate;
@@ -775,17 +775,17 @@ async function updateOrderTotals(
 
   // Calculate subtotal (non-voided items)
   const subtotal = order.items
-    .filter((i) => i.status !== "VOID")
-    .reduce((sum, i) => sum + Number(i.totalPrice), 0);
+    .filter((i: typeof order.items[number]) => i.status !== "VOID")
+    .reduce((sum: number, i: typeof order.items[number]) => sum + Number(i.totalPrice), 0);
 
   // Calculate discounts
   const discountAmount = order.discounts.reduce(
-    (sum, d) => sum + Number(d.amount),
+    (sum: number, d: typeof order.discounts[number]) => sum + Number(d.amount),
     0
   );
 
   // Calculate comps
-  const compAmount = order.comps.reduce((sum, c) => sum + Number(c.amount), 0);
+  const compAmount = order.comps.reduce((sum: number, c: typeof order.comps[number]) => sum + Number(c.amount), 0);
 
   // Calculate tax (after discounts and comps)
   const taxableAmount = Math.max(0, subtotal - discountAmount - compAmount);
@@ -794,7 +794,7 @@ async function updateOrderTotals(
 
   // Calculate tips
   const tipAmount = order.payments.reduce(
-    (sum, p) => sum + Number(p.tipAmount),
+    (sum: number, p: typeof order.payments[number]) => sum + Number(p.tipAmount),
     0
   );
 
