@@ -7,6 +7,15 @@ import type {
 } from "@mise-pos/database";
 
 interface OrderItemWithDetails extends OrderItem {
+  id: string;
+  status: "PENDING" | "HELD" | "FIRED" | "IN_PROGRESS" | "READY" | "SERVED" | "VOID";
+  quantity: number;
+  seat: number;
+  course: number;
+  unitPrice: number | string | { toString(): string };
+  modifierTotal: number | string | { toString(): string };
+  totalPrice: number | string | { toString(): string };
+  specialInstructions: string | null;
   menuItem: MenuItem;
   modifiers: Array<{ modifierId: string; name: string; priceAdjustment: number }>;
 }
