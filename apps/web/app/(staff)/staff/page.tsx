@@ -119,7 +119,7 @@ export default function StaffHubPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {eightySixedItems.map((item) => (
+                    {eightySixedItems.map((item: typeof eightySixedItems[number]) => (
                       <div
                         key={item.id}
                         className="flex items-center justify-between p-2 bg-white rounded border border-red-100"
@@ -149,7 +149,7 @@ export default function StaffHubPage() {
                   </div>
                 ) : specials && specials.length > 0 ? (
                   <div className="space-y-3">
-                    {specials.map((special, index) => (
+                    {specials.map((special: typeof specials[number], index: number) => (
                       <div key={index} className="p-3 bg-amber-50 rounded-lg border border-amber-100">
                         <div className="flex items-start justify-between">
                           <div>
@@ -220,7 +220,7 @@ export default function StaffHubPage() {
                 ) : tipInsights && tipInsights.length > 0 ? (
                   <ScrollArea className="h-[400px]">
                     <div className="space-y-4 pr-4">
-                      {tipInsights.map((insight, index) => (
+                      {tipInsights.map((insight: typeof tipInsights[number], index: number) => (
                         <div key={index} className="p-4 bg-white rounded-lg border">
                           <div className="flex items-start gap-3">
                             <div className="p-2 bg-green-100 rounded-full">
@@ -334,7 +334,7 @@ export default function StaffHubPage() {
                     { rank: 1, name: "Sarah M.", sales: 4200 },
                     { rank: 2, name: "You", sales: 3450, isYou: true },
                     { rank: 3, name: "Mike T.", sales: 3100 },
-                  ].map((entry) => (
+                  ].map((entry: { rank: number; name: string; sales: number; isYou?: boolean }) => (
                     <div
                       key={entry.rank}
                       className={`flex items-center justify-between p-2 rounded ${
