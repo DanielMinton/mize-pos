@@ -180,7 +180,7 @@ export default function DashboardPage() {
                   <p className="text-gray-900">{queryMutation.data.answer}</p>
                   {queryMutation.data.metrics && queryMutation.data.metrics.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {queryMutation.data.metrics.map((metric, i) => (
+                      {queryMutation.data.metrics.map((metric: typeof queryMutation.data.metrics[number], i: number) => (
                         <Badge key={i} variant="outline">
                           {metric.label}: {metric.value}
                           {metric.trend && (
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                     <div className="mt-3">
                       <p className="text-xs text-gray-500 mb-1">Try asking:</p>
                       <div className="flex flex-wrap gap-1">
-                        {queryMutation.data.suggestedQueries.map((q, i) => (
+                        {queryMutation.data.suggestedQueries.map((q: string, i: number) => (
                           <Button
                             key={i}
                             variant="ghost"
@@ -520,7 +520,7 @@ export default function DashboardPage() {
               <CardContent>
                 {lowInventory && lowInventory.length > 0 ? (
                   <div className="space-y-2">
-                    {lowInventory.map((item) => (
+                    {lowInventory.map((item: typeof lowInventory[number]) => (
                       <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                           <p className="font-medium">{item.name}</p>
