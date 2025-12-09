@@ -66,7 +66,7 @@ export function StationTabs({ stations }: StationTabsProps) {
       </button>
 
       {/* Individual stations */}
-      {stations.map((station) => (
+      {stations.map((station: typeof stations[number]) => (
         <button
           key={station.id}
           onClick={() => setActiveStation(station.id)}

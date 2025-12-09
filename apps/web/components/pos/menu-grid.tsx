@@ -59,7 +59,7 @@ export function MenuGrid<T extends BaseMenuItem>({ categories, onItemClick }: Me
     let items: T[] = [];
 
     if (activeCategoryId) {
-      const category = categories.find((c) => c.id === activeCategoryId);
+      const category = categories.find((c: typeof categories[number]) => c.id === activeCategoryId);
       items = category?.items || [];
     } else {
       // Show all items from all categories
@@ -70,10 +70,10 @@ export function MenuGrid<T extends BaseMenuItem>({ categories, onItemClick }: Me
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       items = items.filter(
-        (item) =>
+        (item: T) =>
           item.name.toLowerCase().includes(query) ||
           item.description?.toLowerCase().includes(query) ||
-          item.tags.some((tag) => tag.toLowerCase().includes(query))
+          item.tags.some((tag: string) => tag.toLowerCase().includes(query))
       );
     }
 
@@ -90,7 +90,7 @@ export function MenuGrid<T extends BaseMenuItem>({ categories, onItemClick }: Me
 
   return (
     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 p-2">
-      {displayItems.map((item) => (
+      {displayItems.map((item: T) => (
         <MenuItemButton
           key={item.id}
           item={item}

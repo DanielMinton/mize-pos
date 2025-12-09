@@ -130,7 +130,7 @@ export default function KDSPage() {
   };
 
   const stations =
-    stationSummary?.map((s) => ({
+    stationSummary?.map((s: typeof stationSummary[number]) => ({
       id: s.station.id,
       name: s.station.name,
       shortName: s.station.shortName,
@@ -200,7 +200,7 @@ export default function KDSPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {displayTickets.map((ticket) => (
+            {displayTickets.map((ticket: typeof displayTickets[number]) => (
               <TicketCard
                 key={ticket.orderId}
                 ticket={ticket}
