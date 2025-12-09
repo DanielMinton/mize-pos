@@ -651,7 +651,7 @@ export const intelligenceRouter = router({
       });
 
       // Calculate category averages
-      const categories = [...new Set(itemMetrics.map((i: typeof itemMetrics[number]) => i.category))];
+      const categories = [...new Set<string>(itemMetrics.map((i: typeof itemMetrics[number]) => i.category))];
       const categoryAverages = categories.map((cat: string) => {
         const catItems = itemMetrics.filter((i: typeof itemMetrics[number]) => i.category === cat);
         const avgQuantity = catItems.reduce((s: number, i: typeof catItems[number]) => s + i.quantitySold, 0) / catItems.length;
