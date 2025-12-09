@@ -6,7 +6,7 @@ import type {
   Modifier,
 } from "@mise-pos/database";
 
-interface OrderItemWithDetails extends OrderItem {
+interface OrderItemWithDetails extends Omit<OrderItem, 'unitPrice' | 'modifierTotal' | 'totalPrice'> {
   id: string;
   status: "PENDING" | "HELD" | "FIRED" | "IN_PROGRESS" | "READY" | "SERVED" | "VOID";
   quantity: number;

@@ -625,7 +625,7 @@ export const intelligenceRouter = router({
         _sum: { quantity: true, totalPrice: true },
       });
 
-      const orderItemMap = new Map(orderItems.map((o: typeof orderItems[number]) => [o.menuItemId, o]));
+      const orderItemMap = new Map<string, typeof orderItems[number]>(orderItems.map((o: typeof orderItems[number]) => [o.menuItemId, o]));
 
       // Calculate metrics for each item
       const itemMetrics = items.map((item: typeof items[number]) => {
