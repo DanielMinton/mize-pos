@@ -426,7 +426,7 @@ export default function DashboardPage() {
                 <CardContent>
                   {eightySixedItems && eightySixedItems.length > 0 ? (
                     <div className="space-y-2">
-                      {eightySixedItems.map((item) => (
+                      {eightySixedItems.map((item: typeof eightySixedItems[number]) => (
                         <div key={item.id} className="flex items-center justify-between p-2 bg-red-50 rounded">
                           <span className="font-medium text-red-900">{item.menuItem.name}</span>
                           <span className="text-sm text-red-600">{item.reason || "Out of stock"}</span>
