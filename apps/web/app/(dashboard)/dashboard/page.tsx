@@ -451,7 +451,7 @@ export default function DashboardPage() {
                   {lowInventory && lowInventory.length > 0 ? (
                     <ScrollArea className="h-40">
                       <div className="space-y-2">
-                        {lowInventory.slice(0, 5).map((item) => (
+                        {lowInventory.slice(0, 5).map((item: typeof lowInventory[number]) => (
                           <div key={item.id} className="flex items-center justify-between p-2 bg-amber-50 rounded">
                             <span className="font-medium text-amber-900">{item.name}</span>
                             <span className="text-sm text-amber-600">
