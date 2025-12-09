@@ -1,0 +1,1143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ORGANIZATION & AUTH
+// ============================================================================
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  locations Location[]
+  users     User[]
+  roles     Role[]
+  settings  OrganizationSettings?
+
+  @@map("organizations")
+}
+
+model OrganizationSettings {
+  id             String @id @default(cuid())
+  organizationId String @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  timezone       String @default("America/New_York")
+  currency       String @default("USD")
+  taxRate        Decimal @default(0) @db.Decimal(5, 4)
+  autoGratuity   Decimal? @db.Decimal(5, 4) // e.g., 0.18 for 18%
+  autoGratuityThreshold Int? // Party size threshold
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("organization_settings")
+}
+
+model Location {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name           String
+  address        String?
+  city           String?
+  state          String?
+  zipCode        String?
+  phone          String?
+  timezone       String   @default("America/New_York")
+  isActive       Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  menus            Menu[]
+  orders           Order[]
+  inventoryItems   InventoryItem[]
+  stations         Station[]
+  tables           Table[]
+  shifts           Shift[]
+  eightySixes      EightySix[]
+  prepTasks        PrepTask[]
+  salesSnapshots   SalesSnapshot[]
+  announcements    Announcement[]
+  printers         Printer[]
+
+  @@map("locations")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  email          String   @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  pin            String?  // 4-digit PIN for quick terminal login
+  phone          String?
+  isActive       Boolean  @default(true)
+
+  roleId         String
+  role           Role     @relation(fields: [roleId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders           Order[]      @relation("ServerOrders")
+  approvedVoids    Void[]       @relation("ApprovedVoids")
+  approvedComps    Comp[]       @relation("ApprovedComps")
+  approvedDiscounts Discount[]  @relation("ApprovedDiscounts")
+  shifts           Shift[]
+  timeEntries      TimeEntry[]
+  clockedInShift   Shift?       @relation("ClockedInUser")
+  inventoryCounts  InventoryCount[]
+  wasteLogs        WasteLog[]
+  eightySixes      EightySix[]
+  prepTasksAssigned PrepTask[]
+  announcements    Announcement[]
+
+  @@map("users")
+}
+
+model Role {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  permissions Json     // Stored as JSON object with permission flags
+  color       String?  // For UI display
+  sortOrder   Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
+
+  @@unique([organizationId, name])
+  @@map("roles")
+}
+
+// ============================================================================
+// MENU SYSTEM
+// ============================================================================
+
+model Menu {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  name       String   // "Dinner", "Lunch", "Happy Hour", "Brunch"
+  isActive   Boolean  @default(true)
+  startTime  String?  // "11:00" - when this menu becomes available
+  endTime    String?  // "15:00" - when this menu ends
+  daysOfWeek Int[]    // [0,1,2,3,4,5,6] - Sunday = 0
+  sortOrder  Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categories MenuCategory[]
+
+  @@map("menus")
+}
+
+model MenuCategory {
+  id       String @id @default(cuid())
+  menuId   String
+  menu     Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  name        String   // "Appetizers", "Entrees", "Desserts", "Beer", "Cocktails"
+  description String?
+  sortOrder   Int      @default(0)
+  color       String?  // For UI categorization
+  printerId   String?  // Default printer for this category
+  printer     Printer? @relation(fields: [printerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items MenuItem[]
+
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id         String       @id @default(cuid())
+  categoryId String
+  category   MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name            String
+  description     String?
+  price           Decimal      @db.Decimal(10, 2)
+  cost            Decimal?     @db.Decimal(10, 2) // Food cost (calculated from recipe)
+
+  // Kitchen routing
+  stationId       String?
+  station         Station?     @relation(fields: [stationId], references: [id])
+  prepTime        Int?         // Minutes
+
+  // Display
+  imageUrl        String?
+  color           String?
+  sortOrder       Int          @default(0)
+
+  // Status
+  isActive        Boolean      @default(true)
+  isEightySixed   Boolean      @default(false)
+  stockCount      Int?         // null = unlimited, number = limited quantity
+
+  // Metadata
+  calories        Int?
+  allergens       String[]     // ["gluten", "dairy", "nuts", "shellfish"]
+  tags            String[]     // ["vegetarian", "vegan", "gf", "spicy", "chef-special"]
+
+  // Printing
+  printerId       String?      // Override category printer
+  printer         Printer?     @relation(fields: [printerId], references: [id])
+  kitchenName     String?      // Short name for kitchen display
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  modifierGroups    MenuItemModifierGroup[]
+  orderItems        OrderItem[]
+  recipe            Recipe?
+  eightySixes       EightySix[]
+
+  @@map("menu_items")
+}
+
+model ModifierGroup {
+  id         String   @id @default(cuid())
+  locationId String
+
+  name           String   // "Temperature", "Sides", "Add-ons", "Dressings"
+  displayName    String?  // "How would you like that cooked?"
+
+  required       Boolean  @default(false)
+  multiSelect    Boolean  @default(false) // Can select multiple?
+  minSelections  Int      @default(0)
+  maxSelections  Int?     // null = unlimited (when multiSelect is true)
+
+  sortOrder      Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  modifiers  Modifier[]
+  menuItems  MenuItemModifierGroup[]
+
+  @@map("modifier_groups")
+}
+
+model Modifier {
+  id              String        @id @default(cuid())
+  modifierGroupId String
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  name           String        // "Medium-Rare", "Add Bacon", "Ranch"
+  shortName      String?       // "MR", "BACON", "RANCH" - for tickets
+  priceAdjustment Decimal      @default(0) @db.Decimal(10, 2)
+  isDefault      Boolean       @default(false)
+  isActive       Boolean       @default(true)
+  sortOrder      Int           @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItemModifiers OrderItemModifier[]
+
+  @@map("modifiers")
+}
+
+model MenuItemModifierGroup {
+  id              String        @id @default(cuid())
+  menuItemId      String
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  modifierGroupId String
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  sortOrder Int @default(0)
+
+  // Override group settings for this specific item
+  required      Boolean?
+  minSelections Int?
+  maxSelections Int?
+
+  @@unique([menuItemId, modifierGroupId])
+  @@map("menu_item_modifier_groups")
+}
+
+// ============================================================================
+// ORDERS
+// ============================================================================
+
+model Table {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  name       String   // "Table 1", "Bar 3", "Patio 5"
+  section    String?  // "Main", "Bar", "Patio"
+  capacity   Int      @default(4)
+  posX       Int?     // For floor plan display
+  posY       Int?
+  isActive   Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("tables")
+}
+
+model Order {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  orderNumber   Int      // Sequential per location per day
+
+  type          OrderType     @default(DINE_IN)
+  status        OrderStatus   @default(OPEN)
+
+  // Table/Tab info
+  tableId       String?
+  table         Table?        @relation(fields: [tableId], references: [id])
+  guestCount    Int           @default(1)
+  tabName       String?       // For bar tabs: "John's Tab"
+
+  // Server
+  serverId      String
+  server        User          @relation("ServerOrders", fields: [serverId], references: [id])
+
+  // Timing
+  openedAt      DateTime      @default(now())
+  closedAt      DateTime?
+
+  // Totals (calculated)
+  subtotal      Decimal       @default(0) @db.Decimal(10, 2)
+  taxAmount     Decimal       @default(0) @db.Decimal(10, 2)
+  discountAmount Decimal      @default(0) @db.Decimal(10, 2)
+  tipAmount     Decimal       @default(0) @db.Decimal(10, 2)
+  total         Decimal       @default(0) @db.Decimal(10, 2)
+
+  // Guest info (optional)
+  guestName     String?
+  guestPhone    String?
+  guestNotes    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  items     OrderItem[]
+  payments  Payment[]
+  checks    Check[]
+  voids     Void[]
+  comps     Comp[]
+  discounts Discount[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+
+  // Seat/Course tracking
+  seat        Int       @default(1)
+  course      Int       @default(1)  // 1 = first course, 2 = second, etc.
+
+  // Status
+  status      OrderItemStatus @default(PENDING)
+
+  // Pricing (captured at time of order)
+  quantity    Int       @default(1)
+  unitPrice   Decimal   @db.Decimal(10, 2)
+  modifierTotal Decimal @default(0) @db.Decimal(10, 2)
+  totalPrice  Decimal   @db.Decimal(10, 2)
+
+  // Kitchen
+  sentAt      DateTime?  // When sent to kitchen
+  firedAt     DateTime?  // When fired (for held items)
+  readyAt     DateTime?  // When marked ready by kitchen
+  servedAt    DateTime?  // When served to guest
+
+  // Notes
+  specialInstructions String?
+
+  // Check assignment (for split checks)
+  checkId     String?
+  check       Check?    @relation(fields: [checkId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  modifiers OrderItemModifier[]
+  void      Void?
+
+  @@map("order_items")
+}
+
+model OrderItemModifier {
+  id           String    @id @default(cuid())
+  orderItemId  String
+  orderItem    OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  modifierId   String
+  modifier     Modifier  @relation(fields: [modifierId], references: [id])
+
+  // Captured at time of order
+  name         String
+  priceAdjustment Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+
+  @@map("order_item_modifiers")
+}
+
+model Check {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  name       String?  // "Check 1", "John's Check"
+  subtotal   Decimal  @default(0) @db.Decimal(10, 2)
+  taxAmount  Decimal  @default(0) @db.Decimal(10, 2)
+  tipAmount  Decimal  @default(0) @db.Decimal(10, 2)
+  total      Decimal  @default(0) @db.Decimal(10, 2)
+  isPaid     Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items    OrderItem[]
+  payments Payment[]
+
+  @@map("checks")
+}
+
+model Payment {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  checkId String?
+  check   Check? @relation(fields: [checkId], references: [id])
+
+  method        PaymentMethod
+  amount        Decimal       @db.Decimal(10, 2)
+  tipAmount     Decimal       @default(0) @db.Decimal(10, 2)
+
+  // Card details (masked)
+  cardLast4     String?
+  cardBrand     String?
+
+  // External reference
+  transactionId String?
+
+  processedAt   DateTime      @default(now())
+
+  createdAt DateTime @default(now())
+
+  @@map("payments")
+}
+
+model Void {
+  id          String    @id @default(cuid())
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItemId String?   @unique
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id])
+
+  reason      String
+  amount      Decimal   @db.Decimal(10, 2)
+
+  approvedById String
+  approvedBy   User      @relation("ApprovedVoids", fields: [approvedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("voids")
+}
+
+model Comp {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  reason   String
+  amount   Decimal @db.Decimal(10, 2)
+
+  approvedById String
+  approvedBy   User    @relation("ApprovedComps", fields: [approvedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("comps")
+}
+
+model Discount {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  name       String   // "Happy Hour 20%", "Employee 50%"
+  type       DiscountType
+  value      Decimal  @db.Decimal(10, 2) // Percentage or fixed amount
+  amount     Decimal  @db.Decimal(10, 2) // Calculated discount amount
+
+  approvedById String?
+  approvedBy   User?   @relation("ApprovedDiscounts", fields: [approvedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("discounts")
+}
+
+// ============================================================================
+// INVENTORY
+// ============================================================================
+
+model InventoryItem {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  name            String
+  description     String?
+  category        String    // "Produce", "Protein", "Dairy", "Dry Goods", "Beverage"
+  unit            String    // "lb", "oz", "each", "case", "gal"
+
+  // Stock levels
+  currentStock    Decimal   @default(0) @db.Decimal(10, 3)
+  parLevel        Decimal?  @db.Decimal(10, 3)
+  reorderPoint    Decimal?  @db.Decimal(10, 3)
+  reorderQuantity Decimal?  @db.Decimal(10, 3)
+
+  // Costing
+  unitCost        Decimal   @default(0) @db.Decimal(10, 4)
+  lastCost        Decimal?  @db.Decimal(10, 4)
+
+  // Freshness
+  shelfLifeDays   Int?
+  storageLocation String?   // "Walk-in", "Freezer", "Dry Storage"
+
+  // Supplier
+  supplierId      String?
+  supplier        Supplier? @relation(fields: [supplierId], references: [id])
+  supplierSku     String?
+
+  isActive        Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  counts          InventoryCount[]
+  recipeIngredients RecipeIngredient[]
+  freshnessLogs   FreshnessLog[]
+  purchaseOrderItems PurchaseOrderItem[]
+  wasteLogs       WasteLog[]
+
+  @@map("inventory_items")
+}
+
+model InventoryCount {
+  id              String        @id @default(cuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  countedBy   String
+  user        User      @relation(fields: [countedBy], references: [id])
+
+  previousCount Decimal @db.Decimal(10, 3)
+  newCount      Decimal @db.Decimal(10, 3)
+  variance      Decimal @db.Decimal(10, 3)
+  notes         String?
+
+  countedAt DateTime @default(now())
+
+  @@map("inventory_counts")
+}
+
+model FreshnessLog {
+  id              String        @id @default(cuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  batchId       String?   // For tracking specific batches
+  quantity      Decimal   @db.Decimal(10, 3)
+  receivedAt    DateTime  @default(now())
+  expiresAt     DateTime?
+  status        FreshnessStatus @default(FRESH)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("freshness_logs")
+}
+
+model Supplier {
+  id          String @id @default(cuid())
+
+  name        String
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  notes       String?
+
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventoryItems  InventoryItem[]
+  purchaseOrders  PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id         String   @id @default(cuid())
+  locationId String
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  orderNumber String
+  status      PurchaseOrderStatus @default(DRAFT)
+
+  subtotal    Decimal  @default(0) @db.Decimal(10, 2)
+  taxAmount   Decimal  @default(0) @db.Decimal(10, 2)
+  total       Decimal  @default(0) @db.Decimal(10, 2)
+
+  notes       String?
+  orderedAt   DateTime?
+  receivedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  quantity        Decimal       @db.Decimal(10, 3)
+  unitCost        Decimal       @db.Decimal(10, 4)
+  totalCost       Decimal       @db.Decimal(10, 2)
+
+  receivedQuantity Decimal?     @db.Decimal(10, 3)
+
+  @@map("purchase_order_items")
+}
+
+model WasteLog {
+  id              String        @id @default(cuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  quantity   Decimal   @db.Decimal(10, 3)
+  reason     WasteReason
+  notes      String?
+  cost       Decimal   @db.Decimal(10, 2) // Calculated waste cost
+
+  loggedById String
+  loggedBy   User      @relation(fields: [loggedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("waste_logs")
+}
+
+// ============================================================================
+// RECIPES
+// ============================================================================
+
+model Recipe {
+  id         String   @id @default(cuid())
+  menuItemId String   @unique
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  yield       Decimal  @default(1) @db.Decimal(10, 3)
+  yieldUnit   String   @default("portion")
+
+  instructions String?  // Rich text or markdown
+  prepTime     Int?     // Minutes
+  cookTime     Int?     // Minutes
+
+  // Calculated costs
+  ingredientCost Decimal @default(0) @db.Decimal(10, 4)
+  costPerPortion Decimal @default(0) @db.Decimal(10, 4)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ingredients RecipeIngredient[]
+
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  id              String        @id @default(cuid())
+  recipeId        String
+  recipe          Recipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  quantity        Decimal       @db.Decimal(10, 4)
+  unit            String
+  notes           String?       // "julienned", "diced small"
+
+  // Calculated
+  cost            Decimal       @default(0) @db.Decimal(10, 4)
+
+  @@map("recipe_ingredients")
+}
+
+// ============================================================================
+// OPERATIONS
+// ============================================================================
+
+model Station {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  name       String   // "Grill", "Sauté", "Garde Manger", "Pastry", "Bar", "Expo"
+  shortName  String   // "GRL", "SAU", "GM", "PST", "BAR", "EXP"
+  color      String?
+  sortOrder  Int      @default(0)
+  isExpo     Boolean  @default(false) // Is this the expo station?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  menuItems MenuItem[]
+
+  @@map("stations")
+}
+
+model EightySix {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  reason     String?
+  eightySixedById String
+  eightySixedBy   User   @relation(fields: [eightySixedById], references: [id])
+
+  eightySixedAt DateTime @default(now())
+  restoredAt    DateTime?
+
+  @@map("eighty_sixes")
+}
+
+model PrepTask {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  quantity    Decimal?  @db.Decimal(10, 3)
+  unit        String?
+
+  priority    PrepPriority @default(NORMAL)
+  status      PrepStatus   @default(PENDING)
+
+  dueAt       DateTime?
+  completedAt DateTime?
+
+  assignedToId String?
+  assignedTo   User?     @relation(fields: [assignedToId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("prep_tasks")
+}
+
+model Printer {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  name       String    // "Kitchen", "Bar", "Receipt"
+  type       PrinterType
+  ipAddress  String?
+  port       Int?
+  isActive   Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  menuCategories MenuCategory[]
+  menuItems      MenuItem[]
+
+  @@map("printers")
+}
+
+model Announcement {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  title      String
+  content    String
+  priority   AnnouncementPriority @default(NORMAL)
+
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+
+  expiresAt  DateTime?
+  isActive   Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("announcements")
+}
+
+// ============================================================================
+// LABOR & SCHEDULING
+// ============================================================================
+
+model Shift {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role       String   // Role for this shift (server, bartender, line cook)
+
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+
+  status     ShiftStatus @default(SCHEDULED)
+
+  // Actual times
+  clockedInAt  DateTime?
+  clockedOutAt DateTime?
+
+  // Currently clocked in user reference
+  clockedInUserId String? @unique
+  clockedInUser   User?   @relation("ClockedInUser", fields: [clockedInUserId], references: [id])
+
+  notes      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  timeEntries TimeEntry[]
+  breaks      Break[]
+
+  @@map("shifts")
+}
+
+model TimeEntry {
+  id      String @id @default(cuid())
+  shiftId String
+  shift   Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+
+  type       TimeEntryType
+  occurredAt DateTime      @default(now())
+  notes      String?
+
+  @@map("time_entries")
+}
+
+model Break {
+  id      String @id @default(cuid())
+  shiftId String
+  shift   Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  type      BreakType
+  startedAt DateTime
+  endedAt   DateTime?
+  duration  Int?      // Minutes (calculated when ended)
+
+  @@map("breaks")
+}
+
+// ============================================================================
+// INTELLIGENCE
+// ============================================================================
+
+model SalesSnapshot {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  date       DateTime @db.Date
+  hour       Int?     // 0-23, null for daily totals
+
+  // Metrics
+  orderCount    Int       @default(0)
+  guestCount    Int       @default(0)
+  grossSales    Decimal   @default(0) @db.Decimal(12, 2)
+  netSales      Decimal   @default(0) @db.Decimal(12, 2)
+  discounts     Decimal   @default(0) @db.Decimal(10, 2)
+  voids         Decimal   @default(0) @db.Decimal(10, 2)
+  comps         Decimal   @default(0) @db.Decimal(10, 2)
+  taxes         Decimal   @default(0) @db.Decimal(10, 2)
+  tips          Decimal   @default(0) @db.Decimal(10, 2)
+
+  // Labor
+  laborHours    Decimal   @default(0) @db.Decimal(8, 2)
+  laborCost     Decimal   @default(0) @db.Decimal(10, 2)
+
+  // Averages
+  checkAverage  Decimal   @default(0) @db.Decimal(8, 2)
+  ppaAverage    Decimal   @default(0) @db.Decimal(8, 2) // Per person average
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([locationId, date, hour])
+  @@map("sales_snapshots")
+}
+
+model ForecastRecord {
+  id         String   @id @default(cuid())
+  locationId String
+
+  date       DateTime @db.Date
+
+  // Predictions
+  predictedCovers   Int
+  predictedSales    Decimal  @db.Decimal(12, 2)
+  confidenceScore   Decimal  @db.Decimal(5, 4)
+
+  // Factors considered
+  factors    Json?    // Weather, events, historical patterns, etc.
+
+  createdAt DateTime @default(now())
+
+  @@unique([locationId, date])
+  @@map("forecast_records")
+}
+
+model SpecialSuggestion {
+  id         String   @id @default(cuid())
+  locationId String
+
+  name        String
+  description String
+  suggestedPrice Decimal @db.Decimal(10, 2)
+  estimatedCost  Decimal @db.Decimal(10, 2)
+  margin         Decimal @db.Decimal(5, 4)
+
+  reasoning   String   // Why AI suggested this
+  ingredients Json     // Key ingredients used
+
+  status      SuggestionStatus @default(PENDING)
+
+  suggestedFor DateTime @db.Date
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("special_suggestions")
+}
+
+model TipInsight {
+  id String @id @default(cuid())
+
+  category    String   // "upselling", "personal_connection", "timing", "check_presentation"
+  title       String
+  content     String
+  source      String?  // Research citation
+
+  isActive    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tip_insights")
+}
+
+model QueryLog {
+  id         String   @id @default(cuid())
+  locationId String?
+  userId     String?
+
+  query      String
+  response   String
+
+  // Performance tracking
+  processingTimeMs Int?
+  tokensUsed       Int?
+
+  createdAt DateTime @default(now())
+
+  @@map("query_logs")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum OrderType {
+  DINE_IN
+  TAKEOUT
+  DELIVERY
+  BAR_TAB
+}
+
+enum OrderStatus {
+  OPEN
+  SENT
+  IN_PROGRESS
+  READY
+  SERVED
+  CLOSED
+  VOID
+}
+
+enum OrderItemStatus {
+  PENDING    // Not yet sent to kitchen
+  HELD       // Held for later fire
+  FIRED      // Sent to kitchen
+  IN_PROGRESS // Kitchen working on it
+  READY      // Ready for pickup
+  SERVED     // Delivered to guest
+  VOID       // Voided
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT
+  DEBIT
+  GIFT_CARD
+  HOUSE_ACCOUNT
+  COMP
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum FreshnessStatus {
+  FRESH
+  USE_FIRST
+  EXPIRING_SOON
+  EXPIRED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  SUBMITTED
+  CONFIRMED
+  SHIPPED
+  RECEIVED
+  CANCELLED
+}
+
+enum WasteReason {
+  EXPIRED
+  SPOILED
+  OVERPRODUCTION
+  CUSTOMER_RETURN
+  PREPARATION_ERROR
+  SPILLAGE
+  OTHER
+}
+
+enum PrepPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum PrepStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PrinterType {
+  KITCHEN
+  BAR
+  RECEIPT
+  LABEL
+}
+
+enum AnnouncementPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+}
+
+enum TimeEntryType {
+  CLOCK_IN
+  CLOCK_OUT
+  BREAK_START
+  BREAK_END
+}
+
+enum BreakType {
+  PAID
+  UNPAID
+  MEAL
+}
+
+enum SuggestionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  USED
+}
