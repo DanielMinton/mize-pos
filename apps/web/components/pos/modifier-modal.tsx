@@ -51,13 +51,13 @@ export function ModifierModal({
       : Number(menuItem.price);
 
   let modifierTotal = 0;
-  selectedModifiers.forEach((modifierIds, groupId) => {
+  selectedModifiers.forEach((modifierIds: string[], groupId: string) => {
     const group = menuItem.modifierGroups.find(
       (mg: typeof menuItem.modifierGroups[number]) => mg.modifierGroup.id === groupId
     );
     if (!group) return;
 
-    modifierIds.forEach((modifierId) => {
+    modifierIds.forEach((modifierId: string) => {
       const modifier = group.modifierGroup.modifiers.find((m: typeof group.modifierGroup.modifiers[number]) => m.id === modifierId);
       if (modifier) {
         const adjustment =

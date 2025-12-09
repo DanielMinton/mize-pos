@@ -57,7 +57,7 @@ class EventStore {
     // Notify listeners
     const locationListeners = this.listeners.get(key);
     if (locationListeners) {
-      locationListeners.forEach((listener) => listener(payload));
+      locationListeners.forEach((listener: (payload: BroadcastPayload) => void) => listener(payload));
     }
   }
 
@@ -75,7 +75,7 @@ class EventStore {
   getRecentEvents(locationId: string, since?: Date): BroadcastPayload[] {
     const events = this.events.get(locationId) || [];
     if (!since) return events;
-    return events.filter((e) => e.timestamp > since);
+    return events.filter((e: BroadcastPayload) => e.timestamp > since);
   }
 }
 
