@@ -309,7 +309,7 @@ export const kitchenRouter = router({
 
       const avgTicketTime =
         ticketTimes.length > 0
-          ? ticketTimes.reduce((a, b) => a + b, 0) / ticketTimes.length
+          ? ticketTimes.reduce((a: number, b: number) => a + b, 0) / ticketTimes.length
           : 0;
 
       // Get count of current tickets
