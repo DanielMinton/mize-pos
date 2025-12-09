@@ -386,7 +386,7 @@ export default function DashboardPage() {
                 <CardContent>
                   {salesSummary?.paymentsByMethod ? (
                     <div className="space-y-2">
-                      {Object.entries(salesSummary.paymentsByMethod).map(([method, amount]) => (
+                      {Object.entries(salesSummary.paymentsByMethod).map(([method, amount]: [string, number]) => (
                         <div key={method} className="flex items-center justify-between">
                           <span className="capitalize text-gray-600">{method.toLowerCase()}</span>
                           <div className="flex items-center gap-2">
