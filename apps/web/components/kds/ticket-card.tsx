@@ -97,10 +97,10 @@ export function TicketCard({
       {/* Items */}
       <div className="p-4 space-y-3">
         {/* Group items by course */}
-        {Array.from(new Set(ticket.items.map((i) => i.course)))
+        {Array.from(new Set(ticket.items.map((i: typeof ticket.items[number]) => i.course)))
           .sort()
-          .map((course) => {
-            const courseItems = ticket.items.filter((i) => i.course === course);
+          .map((course: number) => {
+            const courseItems = ticket.items.filter((i: typeof ticket.items[number]) => i.course === course);
             return (
               <div key={course}>
                 {ticket.items.some((i) => i.course !== 1) && (
@@ -109,7 +109,7 @@ export function TicketCard({
                   </div>
                 )}
                 <div className="space-y-2">
-                  {courseItems.map((item) => (
+                  {courseItems.map((item: typeof courseItems[number]) => (
                     <TicketItemRow
                       key={item.id}
                       item={item}

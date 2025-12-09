@@ -34,7 +34,7 @@ export function CategoryTabs({ categories }: CategoryTabsProps) {
           All Items
         </button>
 
-        {categories.map((category) => (
+        {categories.map((category: typeof categories[number]) => (
           <button
             key={category.id}
             onClick={() => setActiveCategory(category.id)}

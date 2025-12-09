@@ -53,12 +53,12 @@ export function ModifierModal({
   let modifierTotal = 0;
   selectedModifiers.forEach((modifierIds, groupId) => {
     const group = menuItem.modifierGroups.find(
-      (mg) => mg.modifierGroup.id === groupId
+      (mg: typeof menuItem.modifierGroups[number]) => mg.modifierGroup.id === groupId
     );
     if (!group) return;
 
     modifierIds.forEach((modifierId) => {
-      const modifier = group.modifierGroup.modifiers.find((m) => m.id === modifierId);
+      const modifier = group.modifierGroup.modifiers.find((m: typeof group.modifierGroup.modifiers[number]) => m.id === modifierId);
       if (modifier) {
         const adjustment =
           typeof modifier.priceAdjustment === "string"
@@ -73,7 +73,7 @@ export function ModifierModal({
 
   const handleModifierToggle = (groupId: string, modifierId: string) => {
     const group = menuItem.modifierGroups.find(
-      (mg) => mg.modifierGroup.id === groupId
+      (mg: typeof menuItem.modifierGroups[number]) => mg.modifierGroup.id === groupId
     );
     if (!group) return;
 
@@ -140,7 +140,7 @@ export function ModifierModal({
 
         <div className="space-y-6 py-4">
           {/* Modifier Groups */}
-          {menuItem.modifierGroups.map((mg) => {
+          {menuItem.modifierGroups.map((mg: typeof menuItem.modifierGroups[number]) => {
             const group = mg.modifierGroup;
             const required = mg.required ?? group.required;
             const minSelections = mg.minSelections ?? group.minSelections;
@@ -171,7 +171,7 @@ export function ModifierModal({
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  {group.modifiers.map((modifier) => {
+                  {group.modifiers.map((modifier: typeof group.modifiers[number]) => {
                     const isSelected = currentSelection.includes(modifier.id);
                     const priceAdj =
                       typeof modifier.priceAdjustment === "string"

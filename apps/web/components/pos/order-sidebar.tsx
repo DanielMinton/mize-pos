@@ -58,9 +58,9 @@ export function OrderSidebar({
   const total = subtotal + tax;
   const itemCount = getItemCount();
 
-  const pendingItems = currentOrder.items.filter((i) => i.status === "PENDING");
+  const pendingItems = currentOrder.items.filter((i: typeof currentOrder.items[number]) => i.status === "PENDING");
   const sentItems = currentOrder.items.filter(
-    (i) => i.status !== "PENDING" && i.status !== "VOID"
+    (i: typeof currentOrder.items[number]) => i.status !== "PENDING" && i.status !== "VOID"
   );
 
   const toggleItemSelection = (itemId: string) => {
@@ -110,7 +110,7 @@ export function OrderSidebar({
                 </span>
               </div>
               <div className="space-y-2">
-                {pendingItems.map((item) => (
+                {pendingItems.map((item: typeof pendingItems[number]) => (
                   <OrderItemRow
                     key={item.id}
                     item={item}
@@ -137,7 +137,7 @@ export function OrderSidebar({
                 </span>
               </div>
               <div className="space-y-2">
-                {sentItems.map((item) => (
+                {sentItems.map((item: typeof sentItems[number]) => (
                   <OrderItemRow
                     key={item.id}
                     item={item}
@@ -198,7 +198,7 @@ export function OrderSidebar({
               onHoldItems(
                 selectedItems.size > 0
                   ? Array.from(selectedItems)
-                  : pendingItems.map((i) => i.id)
+                  : pendingItems.map((i: typeof pendingItems[number]) => i.id)
               )
             }
             disabled={pendingItems.length === 0 || isSubmitting}
@@ -290,7 +290,7 @@ function OrderItemRow({
 
           {item.modifiers.length > 0 && (
             <div className="text-xs text-muted-foreground mt-0.5">
-              {item.modifiers.map((m) => m.name).join(", ")}
+              {item.modifiers.map((m: typeof item.modifiers[number]) => m.name).join(", ")}
             </div>
           )}
 
