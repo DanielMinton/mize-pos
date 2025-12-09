@@ -39,37 +39,34 @@ export const reportsRouter = router({
 
       // Calculate metrics
       const orderCount = orders.length;
-      const guestCount = orders.reduce((sum, o) => sum + o.guestCount, 0);
-      const grossSales = orders.reduce((sum, o) => sum + Number(o.subtotal), 0);
+      const guestCount = orders.reduce((sum: number, o: typeof orders[number]) => sum + o.guestCount, 0);
+      const grossSales = orders.reduce((sum: number, o: typeof orders[number]) => sum + Number(o.subtotal), 0);
       const discounts = orders.reduce(
-        (sum, o) => sum + Number(o.discountAmount),
+        (sum: number, o: typeof orders[number]) => sum + Number(o.discountAmount),
         0
       );
-      const voids = orders
-        .flatMap((o) => o.voids)
-        .reduce((sum, v) => sum + Number(v.amount), 0);
-      const comps = orders
-        .flatMap((o) => o.comps)
-        .reduce((sum, c) => sum + Number(c.amount), 0);
+      const voidsArray = orders.flatMap((o: typeof orders[number]) => o.voids);
+      const voids = voidsArray.reduce((sum: number, v: typeof voidsArray[number]) => sum + Number(v.amount), 0);
+      const compsArray = orders.flatMap((o: typeof orders[number]) => o.comps);
+      const comps = compsArray.reduce((sum: number, c: typeof compsArray[number]) => sum + Number(c.amount), 0);
       const netSales = grossSales - discounts - comps;
-      const taxes = orders.reduce((sum, o) => sum + Number(o.taxAmount), 0);
-      const tips = orders.reduce((sum, o) => sum + Number(o.tipAmount), 0);
+      const taxes = orders.reduce((sum: number, o: typeof orders[number]) => sum + Number(o.taxAmount), 0);
+      const tips = orders.reduce((sum: number, o: typeof orders[number]) => sum + Number(o.tipAmount), 0);
 
       const checkAverage = orderCount > 0 ? netSales / orderCount : 0;
       const ppaAverage = guestCount > 0 ? netSales / guestCount : 0;
 
       // Payment breakdown
-      const paymentsByMethod = orders
-        .flatMap((o) => o.payments)
-        .reduce(
-          (acc, p) => {
-            const method = p.method;
-            if (!acc[method]) acc[method] = 0;
-            acc[method] += Number(p.amount);
-            return acc;
-          },
-          {} as Record<string, number>
-        );
+      const paymentsArray = orders.flatMap((o: typeof orders[number]) => o.payments);
+      const paymentsByMethod = paymentsArray.reduce(
+        (acc: Record<string, number>, p: typeof paymentsArray[number]) => {
+          const method = p.method;
+          if (!acc[method]) acc[method] = 0;
+          acc[method] += Number(p.amount);
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
       return {
         orderCount,
@@ -381,16 +378,16 @@ export const reportsRouter = router({
         }),
       ]);
 
-      const totalVoids = voids.reduce((sum, v) => sum + Number(v.amount), 0);
-      const totalComps = comps.reduce((sum, c) => sum + Number(c.amount), 0);
+      const totalVoids = voids.reduce((sum: number, v: typeof voids[number]) => sum + Number(v.amount), 0);
+      const totalComps = comps.reduce((sum: number, c: typeof comps[number]) => sum + Number(c.amount), 0);
 
       return {
-        voids: voids.map((v) => ({
+        voids: voids.map((v: typeof voids[number]) => ({
           ...v,
           amount: Number(v.amount),
           itemName: v.orderItem?.menuItem.name,
         })),
-        comps: comps.map((c) => ({
+        comps: comps.map((c: typeof comps[number]) => ({
           ...c,
           amount: Number(c.amount),
         })),
@@ -424,10 +421,10 @@ export const reportsRouter = router({
       });
 
       const todaySales = todayOrders.reduce(
-        (sum, o) => sum + Number(o.subtotal),
+        (sum: number, o: typeof todayOrders[number]) => sum + Number(o.subtotal),
         0
       );
-      const todayGuests = todayOrders.reduce((sum, o) => sum + o.guestCount, 0);
+      const todayGuests = todayOrders.reduce((sum: number, o: typeof todayOrders[number]) => sum + o.guestCount, 0);
 
       // Yesterday's metrics for comparison
       const yesterdayOrders = await ctx.prisma.order.findMany({

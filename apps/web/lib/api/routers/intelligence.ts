@@ -317,7 +317,7 @@ export const intelligenceRouter = router({
       });
 
       const avgEntreePrice = entrees.length > 0
-        ? entrees.reduce((sum, e) => sum + Number(e.price), 0) / entrees.length
+        ? entrees.reduce((sum: number, e: typeof entrees[number]) => sum + Number(e.price), 0) / entrees.length
         : 25;
 
       const context: SpecialsContext = {
@@ -512,8 +512,8 @@ export const intelligenceRouter = router({
         },
       });
 
-      const totalSubtotal = recentOrders.reduce((s, o) => s + Number(o.subtotal), 0);
-      const totalTips = recentOrders.reduce((s, o) => s + Number(o.tipAmount), 0);
+      const totalSubtotal = recentOrders.reduce((s: number, o: typeof recentOrders[number]) => s + Number(o.subtotal), 0);
+      const totalTips = recentOrders.reduce((s: number, o: typeof recentOrders[number]) => s + Number(o.tipAmount), 0);
       const avgCheckSize = recentOrders.length > 0 ? totalSubtotal / recentOrders.length : 50;
       const avgTipPercentage = totalSubtotal > 0 ? totalTips / totalSubtotal : 0.18;
 
@@ -654,8 +654,8 @@ export const intelligenceRouter = router({
       const categories = [...new Set(itemMetrics.map((i: typeof itemMetrics[number]) => i.category))];
       const categoryAverages = categories.map((cat: string) => {
         const catItems = itemMetrics.filter((i: typeof itemMetrics[number]) => i.category === cat);
-        const avgQuantity = catItems.reduce((s, i) => s + i.quantitySold, 0) / catItems.length;
-        const avgMargin = catItems.reduce((s, i) => s + i.contributionMargin, 0) / catItems.length;
+        const avgQuantity = catItems.reduce((s: number, i: typeof catItems[number]) => s + i.quantitySold, 0) / catItems.length;
+        const avgMargin = catItems.reduce((s: number, i: typeof catItems[number]) => s + i.contributionMargin, 0) / catItems.length;
         return { category: cat, avgQuantity, avgMargin };
       });
 
@@ -730,9 +730,9 @@ async function getSalesSnapshot(
     }),
   ]);
 
-  const todayTotal = todayOrders.reduce((s, o) => s + Number(o.subtotal), 0);
-  const todayGuests = todayOrders.reduce((s, o) => s + o.guestCount, 0);
-  const weekTotal = weekOrders.reduce((s, o) => s + Number(o.subtotal), 0);
+  const todayTotal = todayOrders.reduce((s: number, o: typeof todayOrders[number]) => s + Number(o.subtotal), 0);
+  const todayGuests = todayOrders.reduce((s: number, o: typeof todayOrders[number]) => s + o.guestCount, 0);
+  const weekTotal = weekOrders.reduce((s: number, o: typeof weekOrders[number]) => s + Number(o.subtotal), 0);
   const weekAvg = weekTotal / 7;
 
   return `SALES DATA:

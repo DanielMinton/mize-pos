@@ -464,7 +464,7 @@ export const inventoryRouter = router({
             Number(item.unitCost),
         }));
 
-        const subtotal = poItems.reduce((sum, i) => sum + i.totalCost, 0);
+        const subtotal = poItems.reduce((sum: number, i: typeof poItems[number]) => sum + i.totalCost, 0);
 
         const po = await ctx.prisma.purchaseOrder.create({
           data: {
@@ -519,7 +519,7 @@ export const inventoryRouter = router({
         })
       );
 
-      const ingredientCost = ingredientCosts.reduce((a, b) => a + b, 0);
+      const ingredientCost = ingredientCosts.reduce((a: number, b: number) => a + b, 0);
       const costPerPortion = ingredientCost / recipeData.yield;
 
       const recipe = await ctx.prisma.recipe.create({

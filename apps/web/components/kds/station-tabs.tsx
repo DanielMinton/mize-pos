@@ -61,7 +61,7 @@ export function StationTabs({ stations }: StationTabsProps) {
       >
         ALL
         <Badge variant="secondary" className="text-xs">
-          {stations.reduce((sum, s) => sum + s.pendingCount, 0)}
+          {stations.reduce((sum: number, s: typeof stations[number]) => sum + s.pendingCount, 0)}
         </Badge>
       </button>
 
