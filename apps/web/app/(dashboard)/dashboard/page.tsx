@@ -386,22 +386,25 @@ export default function DashboardPage() {
                 <CardContent>
                   {salesSummary?.paymentsByMethod ? (
                     <div className="space-y-2">
-                      {Object.entries(salesSummary.paymentsByMethod).map(([method, amount]: [string, number]) => (
-                        <div key={method} className="flex items-center justify-between">
-                          <span className="capitalize text-gray-600">{method.toLowerCase()}</span>
-                          <div className="flex items-center gap-2">
-                            <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-primary"
-                                style={{
-                                  width: `${(amount / salesSummary.netSales) * 100}%`,
-                                }}
-                              />
+                      {Object.entries(salesSummary.paymentsByMethod).map(([method, amount]) => {
+                        const amountValue = amount as number;
+                        return (
+                          <div key={method} className="flex items-center justify-between">
+                            <span className="capitalize text-gray-600">{method.toLowerCase()}</span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{
+                                    width: `${(amountValue / salesSummary.netSales) * 100}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="font-medium">{formatCurrency(amountValue)}</span>
                             </div>
-                            <span className="font-medium">{formatCurrency(amount)}</span>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-gray-500 text-center py-4">No data</p>
