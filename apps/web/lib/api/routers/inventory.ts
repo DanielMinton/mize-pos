@@ -53,7 +53,7 @@ export const inventoryRouter = router({
 
       // Filter low stock if requested
       if (input.lowStock) {
-        return items.filter((item) => {
+        return items.filter((item: typeof items[number]) => {
           if (!item.reorderPoint) return false;
           return Number(item.currentStock) <= Number(item.reorderPoint);
         });
@@ -429,7 +429,7 @@ export const inventoryRouter = router({
         },
       });
 
-      const itemsToOrder = lowItems.filter((item) => {
+      const itemsToOrder = lowItems.filter((item: typeof lowItems[number]) => {
         if (!item.reorderPoint) return false;
         return Number(item.currentStock) <= Number(item.reorderPoint);
       });

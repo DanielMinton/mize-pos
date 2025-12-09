@@ -57,10 +57,10 @@ export const kitchenRouter = router({
       });
 
       // Transform into ticket format
-      const tickets = orders.map((order) => {
+      const tickets = orders.map((order: typeof orders[number]) => {
         const firstFiredAt = order.items
-          .filter((i) => i.firedAt)
-          .sort((a, b) => a.firedAt!.getTime() - b.firedAt!.getTime())[0]?.firedAt;
+          .filter((i: typeof order.items[number]) => i.firedAt)
+          .sort((a: typeof order.items[number], b: typeof order.items[number]) => a.firedAt!.getTime() - b.firedAt!.getTime())[0]?.firedAt;
 
         const ageMinutes = firstFiredAt
           ? Math.floor((Date.now() - firstFiredAt.getTime()) / 60000)
@@ -72,7 +72,7 @@ export const kitchenRouter = router({
           ticketStatus = "late";
         } else if (ageMinutes > 10) {
           ticketStatus = "cooking";
-        } else if (order.items.every((i) => i.status === "READY")) {
+        } else if (order.items.every((i: typeof order.items[number]) => i.status === "READY")) {
           ticketStatus = "ready";
         }
 
@@ -85,7 +85,7 @@ export const kitchenRouter = router({
           firedAt: firstFiredAt,
           ageMinutes,
           ticketStatus,
-          items: order.items.map((item) => ({
+          items: order.items.map((item: typeof order.items[number]) => ({
             id: item.id,
             name: item.menuItem.name,
             kitchenName: item.menuItem.kitchenName || item.menuItem.name,
@@ -94,7 +94,7 @@ export const kitchenRouter = router({
             course: item.course,
             status: item.status,
             station: item.menuItem.station,
-            modifiers: item.modifiers.map((m) => m.name),
+            modifiers: item.modifiers.map((m: typeof item.modifiers[number]) => m.name),
             specialInstructions: item.specialInstructions,
           })),
         };
@@ -138,13 +138,13 @@ export const kitchenRouter = router({
         orderBy: { openedAt: "asc" },
       });
 
-      return orders.map((order) => ({
+      return orders.map((order: typeof orders[number]) => ({
         orderId: order.id,
         orderNumber: order.orderNumber,
         tableName: order.table?.name || order.tabName || `Order ${order.orderNumber}`,
         serverName: `${order.server.firstName} ${order.server.lastName.charAt(0)}.`,
         items: order.items,
-        allReady: order.items.every((i) => i.status === "READY"),
+        allReady: order.items.every((i: typeof order.items[number]) => i.status === "READY"),
       }));
     }),
 
@@ -199,7 +199,7 @@ export const kitchenRouter = router({
         await broadcastTicketBumped(
           order.locationId,
           input.orderId,
-          bumpedItems.map((i) => i.id),
+          bumpedItems.map((i: typeof bumpedItems[number]) => i.id),
           input.stationId || "",
           ctx.user.id
         );
@@ -304,8 +304,8 @@ export const kitchenRouter = router({
 
       // Calculate average ticket time
       const ticketTimes = completedItems
-        .filter((i) => i.firedAt && i.readyAt)
-        .map((i) => (i.readyAt!.getTime() - i.firedAt!.getTime()) / 60000);
+        .filter((i: typeof completedItems[number]) => i.firedAt && i.readyAt)
+        .map((i: typeof completedItems[number]) => (i.readyAt!.getTime() - i.firedAt!.getTime()) / 60000);
 
       const avgTicketTime =
         ticketTimes.length > 0

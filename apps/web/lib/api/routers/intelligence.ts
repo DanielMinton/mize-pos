@@ -261,7 +261,7 @@ export const intelligenceRouter = router({
 
       // Calculate days until expiry and determine reason
       const processedInventory = inventoryToUse
-        .map((item) => {
+        .map((item: typeof inventoryToUse[number]) => {
           const freshLog = item.freshnessLogs[0];
           let reason: "expiring" | "overstocked" | "use_first" = "overstocked";
           let daysUntilExpiry: number | undefined;
@@ -291,7 +291,7 @@ export const intelligenceRouter = router({
             reason,
           };
         })
-        .filter((item) => item.currentStock > 0)
+        .filter((item: { currentStock: number }) => item.currentStock > 0)
         .slice(0, 10);
 
       // Get recent specials
@@ -325,7 +325,7 @@ export const intelligenceRouter = router({
         date: now.toISOString().split("T")[0],
         dayOfWeek,
         inventoryToUse: processedInventory,
-        recentSpecials: recentSpecials.map((s) => ({
+        recentSpecials: recentSpecials.map((s: typeof recentSpecials[number]) => ({
           name: s.name,
           daysAgo: Math.ceil((now.getTime() - s.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
           performance: "average" as const, // In production, track actual performance
@@ -342,7 +342,7 @@ export const intelligenceRouter = router({
         today.setHours(0, 0, 0, 0);
 
         await ctx.prisma.specialSuggestion.createMany({
-          data: suggestions.map((s) => ({
+          data: suggestions.map((s: typeof suggestions[number]) => ({
             locationId: input.locationId,
             name: s.name,
             description: s.description,
@@ -439,15 +439,15 @@ export const intelligenceRouter = router({
 
       // Build context for AI
       const menuItemsContext = menuItems
-        .filter((item) => item.recipe)
-        .map((item) => {
-          const salesData = salesMix.find((s) => s.menuItemId === item.id);
+        .filter((item: typeof menuItems[number]) => item.recipe)
+        .map((item: typeof menuItems[number]) => {
+          const salesData = salesMix.find((s: typeof salesMix[number]) => s.menuItemId === item.id);
           const avgDailyOrders = (Number(salesData?._sum.quantity) || 0) / 7;
 
           return {
             name: item.name,
             expectedOrders: Math.ceil(avgDailyOrders * (input.forecastCovers / 100)),
-            prepComponents: item.recipe?.ingredients.map((ing) => ({
+            prepComponents: item.recipe?.ingredients.map((ing: NonNullable<typeof item.recipe>["ingredients"][number]) => ({
               name: ing.inventoryItem.name,
               quantityPerOrder: Number(ing.quantity),
               unit: ing.inventoryItem.unit,
@@ -457,7 +457,7 @@ export const intelligenceRouter = router({
           };
         });
 
-      const currentInventory = inventory.map((item) => ({
+      const currentInventory = inventory.map((item: typeof inventory[number]) => ({
         name: item.name,
         currentStock: Number(item.currentStock),
         unit: item.unit,
@@ -625,10 +625,10 @@ export const intelligenceRouter = router({
         _sum: { quantity: true, totalPrice: true },
       });
 
-      const orderItemMap = new Map(orderItems.map((o) => [o.menuItemId, o]));
+      const orderItemMap = new Map(orderItems.map((o: typeof orderItems[number]) => [o.menuItemId, o]));
 
       // Calculate metrics for each item
-      const itemMetrics = items.map((item) => {
+      const itemMetrics = items.map((item: typeof items[number]) => {
         const orderData = orderItemMap.get(item.id);
         const quantitySold = Number(orderData?._sum.quantity) || 0;
         const revenue = Number(orderData?._sum.totalPrice) || 0;
@@ -651,17 +651,17 @@ export const intelligenceRouter = router({
       });
 
       // Calculate category averages
-      const categories = [...new Set(itemMetrics.map((i) => i.category))];
-      const categoryAverages = categories.map((cat) => {
-        const catItems = itemMetrics.filter((i) => i.category === cat);
+      const categories = [...new Set(itemMetrics.map((i: typeof itemMetrics[number]) => i.category))];
+      const categoryAverages = categories.map((cat: string) => {
+        const catItems = itemMetrics.filter((i: typeof itemMetrics[number]) => i.category === cat);
         const avgQuantity = catItems.reduce((s, i) => s + i.quantitySold, 0) / catItems.length;
         const avgMargin = catItems.reduce((s, i) => s + i.contributionMargin, 0) / catItems.length;
         return { category: cat, avgQuantity, avgMargin };
       });
 
       // Classify items using menu engineering matrix
-      const classifiedItems = itemMetrics.map((item) => {
-        const catAvg = categoryAverages.find((c) => c.category === item.category);
+      const classifiedItems = itemMetrics.map((item: typeof itemMetrics[number]) => {
+        const catAvg = categoryAverages.find((c: typeof categoryAverages[number]) => c.category === item.category);
         const isHighPopularity = item.quantitySold >= (catAvg?.avgQuantity || 0);
         const isHighProfit = item.contributionMargin >= (catAvg?.avgMargin || 0);
 
@@ -692,10 +692,10 @@ export const intelligenceRouter = router({
       return {
         items: classifiedItems,
         summary: {
-          stars: classifiedItems.filter((i) => i.classification === "star").length,
-          plowhorses: classifiedItems.filter((i) => i.classification === "plowhorse").length,
-          puzzles: classifiedItems.filter((i) => i.classification === "puzzle").length,
-          dogs: classifiedItems.filter((i) => i.classification === "dog").length,
+          stars: classifiedItems.filter((i: typeof classifiedItems[number]) => i.classification === "star").length,
+          plowhorses: classifiedItems.filter((i: typeof classifiedItems[number]) => i.classification === "plowhorse").length,
+          puzzles: classifiedItems.filter((i: typeof classifiedItems[number]) => i.classification === "puzzle").length,
+          dogs: classifiedItems.filter((i: typeof classifiedItems[number]) => i.classification === "dog").length,
         },
         categoryAverages,
       };
@@ -765,14 +765,14 @@ async function getMenuSnapshot(
   });
 
   const menuItems = await prisma.menuItem.findMany({
-    where: { id: { in: topItems.map((t) => t.menuItemId) } },
+    where: { id: { in: topItems.map((t: typeof topItems[number]) => t.menuItemId) } },
   });
 
-  const menuMap = new Map(menuItems.map((m) => [m.id, m.name]));
+  const menuMap = new Map(menuItems.map((m: typeof menuItems[number]) => [m.id, m.name]));
 
   const itemsList = topItems
     .map(
-      (item, i) =>
+      (item: typeof topItems[number], i: number) =>
         `${i + 1}. ${menuMap.get(item.menuItemId) || "Unknown"}: ${item._sum.quantity} sold, $${Number(item._sum.totalPrice).toFixed(2)} revenue`
     )
     .join("\n");
@@ -793,7 +793,7 @@ async function getInventorySnapshot(
   });
 
   const lowStock = lowItems.filter(
-    (i) => i.reorderPoint && Number(i.currentStock) <= Number(i.reorderPoint)
+    (i: typeof lowItems[number]) => i.reorderPoint && Number(i.currentStock) <= Number(i.reorderPoint)
   );
 
   const expiringItems = await prisma.freshnessLog.findMany({
@@ -807,10 +807,10 @@ async function getInventorySnapshot(
 
   return `INVENTORY ALERTS:
 Low stock items: ${lowStock.length}
-${lowStock.slice(0, 5).map((i) => `- ${i.name}: ${Number(i.currentStock)} ${i.unit} (reorder at ${Number(i.reorderPoint)})`).join("\n")}
+${lowStock.slice(0, 5).map((i: typeof lowStock[number]) => `- ${i.name}: ${Number(i.currentStock)} ${i.unit} (reorder at ${Number(i.reorderPoint)})`).join("\n")}
 
 Expiring soon:
-${expiringItems.map((e) => `- ${e.inventoryItem.name}: ${e.status}`).join("\n") || "None"}`;
+${expiringItems.map((e: typeof expiringItems[number]) => `- ${e.inventoryItem.name}: ${e.status}`).join("\n") || "None"}`;
 }
 
 async function getLaborSnapshot(
@@ -846,10 +846,10 @@ async function getLaborSnapshot(
 
   return `LABOR STATUS:
 Scheduled shifts today: ${shifts.length}
-${shifts.map((s) => `- ${s.user.firstName} ${s.user.lastName} (${s.role || "Staff"})`).join("\n")}
+${shifts.map((s: typeof shifts[number]) => `- ${s.user.firstName} ${s.user.lastName} (${s.role || "Staff"})`).join("\n")}
 
 Currently clocked in: ${clockedInShifts.length}
-${clockedInShifts.map((s) => `- ${s.user.firstName} ${s.user.lastName}`).join("\n")}`;
+${clockedInShifts.map((s: typeof clockedInShifts[number]) => `- ${s.user.firstName} ${s.user.lastName}`).join("\n")}`;
 }
 
 async function getGeneralSnapshot(
