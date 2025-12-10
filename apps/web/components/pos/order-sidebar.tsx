@@ -18,6 +18,7 @@ import {
   Split,
 } from "lucide-react";
 import { useOrderStore } from "@/lib/stores";
+import { useSwipe } from "@/lib/hooks/use-swipe";
 
 interface OrderSidebarProps {
   onFireOrder: () => void;
@@ -43,7 +44,7 @@ export function OrderSidebar({
 
   if (!currentOrder) {
     return (
-      <div className="w-80 bg-white border-l flex flex-col items-center justify-center text-muted-foreground p-6 text-center">
+      <div className="w-full md:w-80 lg:w-96 bg-white border-l flex flex-col items-center justify-center text-muted-foreground p-6 text-center">
         <p className="text-lg font-medium">No Active Order</p>
         <p className="text-sm mt-2">
           Select a table or start a new tab to begin
@@ -74,7 +75,7 @@ export function OrderSidebar({
   };
 
   return (
-    <div className="w-80 bg-white border-l flex flex-col h-full">
+    <div className="w-full md:w-80 lg:w-96 bg-white border-l flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between">
@@ -263,57 +264,85 @@ function OrderItemRow({
       ? item.totalPrice
       : parseFloat(item.totalPrice.toString());
 
+  // Swipe to remove for pending items
+  const { bind, style, offset, swiping } = useSwipe({
+    threshold: 80,
+    onSwipeLeft: canRemove && onRemove ? onRemove : undefined,
+    enabled: canRemove,
+  });
+
+  const showDeleteIndicator = offset < -30;
+
   return (
-    <div
-      className={cn(
-        "p-2 rounded-lg border transition-colors",
-        isSelected ? "border-primary bg-primary/5" : "border-gray-200",
-        item.status === "VOID" && "opacity-50"
+    <div className="relative overflow-hidden rounded-lg">
+      {/* Delete indicator background */}
+      {canRemove && (
+        <div
+          className={cn(
+            "absolute inset-y-0 right-0 flex items-center justify-end pr-4 bg-red-500 text-white transition-opacity",
+            showDeleteIndicator ? "opacity-100" : "opacity-0"
+          )}
+          style={{ width: Math.abs(offset) + 20 }}
+        >
+          <Trash2 className="w-5 h-5" />
+        </div>
       )}
-      onClick={onSelect}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">
-              {item.quantity > 1 && (
-                <span className="text-primary mr-1">{item.quantity}x</span>
+
+      {/* Main item content */}
+      <div
+        {...bind()}
+        style={canRemove ? style : undefined}
+        className={cn(
+          "p-3 rounded-lg border transition-colors bg-white relative touch-manipulation",
+          isSelected ? "border-primary bg-primary/5" : "border-gray-200",
+          item.status === "VOID" && "opacity-50",
+          swiping && "cursor-grabbing"
+        )}
+        onClick={onSelect}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">
+                {item.quantity > 1 && (
+                  <span className="text-primary mr-1">{item.quantity}x</span>
+                )}
+                {item.menuItem.name}
+              </span>
+              {item.seat > 1 && (
+                <Badge variant="outline" className="text-xs">
+                  S{item.seat}
+                </Badge>
               )}
-              {item.menuItem.name}
-            </span>
-            {item.seat > 1 && (
-              <Badge variant="outline" className="text-xs">
-                S{item.seat}
-              </Badge>
+            </div>
+
+            {item.modifiers.length > 0 && (
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {item.modifiers.map((m: typeof item.modifiers[number]) => m.name).join(", ")}
+              </div>
+            )}
+
+            {item.specialInstructions && (
+              <div className="text-xs text-orange-600 mt-0.5 italic">
+                {item.specialInstructions}
+              </div>
             )}
           </div>
 
-          {item.modifiers.length > 0 && (
-            <div className="text-xs text-muted-foreground mt-0.5">
-              {item.modifiers.map((m: typeof item.modifiers[number]) => m.name).join(", ")}
-            </div>
-          )}
-
-          {item.specialInstructions && (
-            <div className="text-xs text-orange-600 mt-0.5 italic">
-              {item.specialInstructions}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm">{formatCurrency(price)}</span>
-          {canRemove && onRemove && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-              className="p-1 text-red-500 hover:bg-red-50 rounded"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm">{formatCurrency(price)}</span>
+            {canRemove && onRemove && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove();
+                }}
+                className="p-2 text-red-500 hover:bg-red-50 rounded touch-manipulation no-tap-highlight"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
