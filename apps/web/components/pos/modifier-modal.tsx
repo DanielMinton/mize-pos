@@ -219,19 +219,19 @@ export function ModifierModal({
               <div className="flex items-center gap-2 mt-1">
                 <Button
                   variant="outline"
-                  size="icon"
+                  className="h-12 w-12 touch-manipulation no-tap-highlight"
                   onClick={() => setItemQuantity(quantity - 1)}
                   disabled={quantity <= 1}
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-5 h-5" />
                 </Button>
-                <span className="w-8 text-center font-semibold">{quantity}</span>
+                <span className="w-10 text-center font-semibold text-lg">{quantity}</span>
                 <Button
                   variant="outline"
-                  size="icon"
+                  className="h-12 w-12 touch-manipulation no-tap-highlight"
                   onClick={() => setItemQuantity(quantity + 1)}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-5 h-5" />
                 </Button>
               </div>
             </div>
@@ -241,19 +241,19 @@ export function ModifierModal({
               <div className="flex items-center gap-2 mt-1">
                 <Button
                   variant="outline"
-                  size="icon"
+                  className="h-12 w-12 touch-manipulation no-tap-highlight"
                   onClick={() => setItemSeat(seat - 1)}
                   disabled={seat <= 1}
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-5 h-5" />
                 </Button>
-                <span className="w-8 text-center font-semibold">{seat}</span>
+                <span className="w-10 text-center font-semibold text-lg">{seat}</span>
                 <Button
                   variant="outline"
-                  size="icon"
+                  className="h-12 w-12 touch-manipulation no-tap-highlight"
                   onClick={() => setItemSeat(seat + 1)}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-5 h-5" />
                 </Button>
               </div>
             </div>
@@ -263,19 +263,19 @@ export function ModifierModal({
               <div className="flex items-center gap-2 mt-1">
                 <Button
                   variant="outline"
-                  size="icon"
+                  className="h-12 w-12 touch-manipulation no-tap-highlight"
                   onClick={() => setItemCourse(course - 1)}
                   disabled={course <= 1}
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-5 h-5" />
                 </Button>
-                <span className="w-8 text-center font-semibold">{course}</span>
+                <span className="w-10 text-center font-semibold text-lg">{course}</span>
                 <Button
                   variant="outline"
-                  size="icon"
+                  className="h-12 w-12 touch-manipulation no-tap-highlight"
                   onClick={() => setItemCourse(course + 1)}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-5 h-5" />
                 </Button>
               </div>
             </div>

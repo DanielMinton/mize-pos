@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { TicketCard, StationTabs } from "@/components/kds";
 import { trpc } from "@/lib/api/trpc";
 import { useKitchenStore } from "@/lib/stores";
 import { toast } from "@/lib/hooks/use-toast";
+import { useAudio } from "@/lib/audio";
 import { RefreshCw, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -24,6 +25,11 @@ export default function KDSPage() {
     toggleAudio,
     getFilteredTickets,
   } = useKitchenStore();
+
+  // Audio system
+  const { playSound, setEnabled: setAudioEnabled } = useAudio();
+  const prevTicketCount = useRef<number>(0);
+  const prevLateCount = useRef<number>(0);
 
   // Fetch tickets
   const { data: ticketsData, isLoading, refetch } = trpc.kitchen.getTickets.useQuery(
@@ -54,17 +60,41 @@ export default function KDSPage() {
   const recallTicketMutation = trpc.kitchen.recallTicket.useMutation();
   const bumpItemMutation = trpc.order.bumpItem.useMutation();
 
-  // Update local tickets when data changes
+  // Update local tickets when data changes and play sounds
   useEffect(() => {
     if (ticketsData) {
-      setTickets(
-        ticketsData.map((t: typeof ticketsData[number]) => ({
-          ...t,
-          firedAt: t.firedAt ? new Date(t.firedAt) : null,
-        }))
-      );
+      const newTickets = ticketsData.map((t: typeof ticketsData[number]) => ({
+        ...t,
+        firedAt: t.firedAt ? new Date(t.firedAt) : null,
+      }));
+
+      // Play sounds based on changes (only if audio enabled)
+      if (audioEnabled && prevTicketCount.current > 0) {
+        const currentCount = newTickets.length;
+        const lateCount = newTickets.filter((t: typeof newTickets[number]) => t.ticketStatus === "late").length;
+
+        // New ticket sound
+        if (currentCount > prevTicketCount.current) {
+          playSound("new-ticket");
+        }
+
+        // Rush/late ticket sound (new late tickets)
+        if (lateCount > prevLateCount.current) {
+          playSound("rush-ticket");
+        }
+
+        prevLateCount.current = lateCount;
+      }
+
+      prevTicketCount.current = newTickets.length;
+      setTickets(newTickets);
     }
-  }, [ticketsData, setTickets]);
+  }, [ticketsData, setTickets, audioEnabled, playSound]);
+
+  // Sync audio state with store
+  useEffect(() => {
+    setAudioEnabled(audioEnabled);
+  }, [audioEnabled, setAudioEnabled]);
 
   if (status === "loading" || isLoading) {
     return (
@@ -84,6 +114,9 @@ export default function KDSPage() {
         orderId,
         stationId: activeStationId || undefined,
       });
+      if (audioEnabled) {
+        playSound("bump");
+      }
       refetch();
       toast({
         title: "Ticket bumped",
