@@ -28,6 +28,9 @@ const badgeVariants = cva(
         // 86'd
         "eighty-six":
           "border-transparent bg-red-500 text-white font-bold uppercase",
+        // Success/Warning variants
+        success: "border-transparent bg-green-500 text-white",
+        warning: "border-transparent bg-yellow-500 text-black",
       },
     },
     defaultVariants: {
