@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
-import { MenuGrid, CategoryTabs, OrderSidebar, ModifierModal } from "@/components/pos";
+import { MenuGrid, CategoryTabs, OrderSidebar, ModifierModal, QuickActionsBar } from "@/components/pos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { OfflineIndicator } from "@/components/ui/offline-indicator";
 import { trpc } from "@/lib/api/trpc";
-import { useOrderStore, usePOSStore } from "@/lib/stores";
+import { useOrderStore, usePOSStore, useQuickActionsStore } from "@/lib/stores";
 import { toast } from "@/lib/hooks/use-toast";
 import {
   Search,
@@ -40,6 +42,8 @@ export default function POSPage() {
     setSearchQuery,
     setEightySixedItems,
   } = usePOSStore();
+
+  const { addRecentItem, lastOrderItems, setLastOrder } = useQuickActionsStore();
 
   // Fetch menu data
   const { data: menus, isLoading: menusLoading } = trpc.menu.getActiveMenu.useQuery(
@@ -127,7 +131,7 @@ export default function POSPage() {
     }
   };
 
-  const handleAddItemDirectly = async (item: (typeof categories)[0]["items"][0]) => {
+  const handleAddItemDirectly = async (item: (typeof categories)[0]["items"][0], categoryName?: string) => {
     if (!currentOrder) return;
 
     try {
@@ -158,6 +162,16 @@ export default function POSPage() {
 
       addItemToOrder(newItem as never);
 
+      // Track in recent items
+      addRecentItem({
+        id: crypto.randomUUID(),
+        menuItemId: item.id,
+        name: item.name,
+        price: Number(item.price),
+        categoryName: categoryName || "Menu",
+        hasModifiers: item.modifierGroups.length > 0,
+      });
+
       toast({
         title: "Item added",
         description: `${item.name} added to order`,
@@ -173,7 +187,7 @@ export default function POSPage() {
 
   const handleConfirmModifiers = async () => {
     const itemData = confirmItemAddition();
-    if (!itemData || !currentOrder) return;
+    if (!itemData || !currentOrder || !modifierSelection) return;
 
     try {
       let orderId = currentOrder.id;
@@ -198,6 +212,17 @@ export default function POSPage() {
       });
 
       addItemToOrder(newItem as never);
+
+      // Track in recent items
+      addRecentItem({
+        id: crypto.randomUUID(),
+        menuItemId: modifierSelection.menuItem.id,
+        name: modifierSelection.menuItem.name,
+        price: Number(modifierSelection.menuItem.price),
+        categoryName: "Menu",
+        hasModifiers: true,
+      });
+
       setIsModifierModalOpen(false);
 
       toast({
@@ -270,9 +295,9 @@ export default function POSPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-gray-100 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b px-4 py-2 flex items-center gap-4">
+      <header className="bg-white dark:bg-gray-800 border-b px-4 py-2 flex items-center gap-4">
         <h1 className="text-xl font-bold text-primary">MisePOS</h1>
 
         {/* Search */}
@@ -294,6 +319,12 @@ export default function POSPage() {
           </Badge>
         )}
 
+        {/* Offline Indicator */}
+        <OfflineIndicator showSyncButton={false} />
+
+        {/* Theme Toggle */}
+        <ThemeToggle variant="icon" />
+
         {/* User */}
         <div className="text-sm text-muted-foreground">
           {session?.user?.firstName} {session?.user?.lastName?.charAt(0)}.
@@ -308,6 +339,39 @@ export default function POSPage() {
           color: c.color,
           itemCount: c.itemCount,
         }))}
+      />
+
+      {/* Quick Actions Bar */}
+      <QuickActionsBar
+        onItemClick={(quickItem) => {
+          // Find the full item data from categories
+          for (const cat of categories) {
+            const item = cat.items.find((i: typeof cat.items[number]) => i.id === quickItem.menuItemId);
+            if (item) {
+              if (quickItem.hasModifiers) {
+                openModifierSelection(item as never);
+                setIsModifierModalOpen(true);
+              } else {
+                handleAddItemDirectly(item, cat.name);
+              }
+              return;
+            }
+          }
+        }}
+        onRepeatLast={() => {
+          // Add all items from last order
+          lastOrderItems.forEach((quickItem) => {
+            for (const cat of categories) {
+              const item = cat.items.find((i: typeof cat.items[number]) => i.id === quickItem.menuItemId);
+              if (item && !item.isEightySixed) {
+                if (!quickItem.hasModifiers) {
+                  handleAddItemDirectly(item, cat.name);
+                }
+                break;
+              }
+            }
+          });
+        }}
       />
 
       {/* Main Content */}
